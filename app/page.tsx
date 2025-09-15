@@ -1,103 +1,185 @@
-import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { CheckCircle2, Clock, AlertTriangle, ListTodo, Calendar, FolderOpen, Activity, KanbanSquare, Settings } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
+import Link from "next/link"
+import { checkUserRole } from "@/lib/actions/admin"
+import { getAllTasks, getDashboardStats } from "@/lib/actions/tasks"
+import { CreateTaskDialog } from "@/components/create-task-dialog"
 
-export default function Home() {
+const getStatusBadge = (status: string) => {
+  const variants = {
+    Done: "default",
+    Processing: "secondary",
+    New: "outline",
+  } as const
+
+  return <Badge variant={variants[status as keyof typeof variants] || "outline"}>{status}</Badge>
+}
+
+export default async function Dashboard() {
+  const userRole = await checkUserRole()
+  const stats = await getDashboardStats()
+  const allTasks = await getAllTasks()
+
+  // Get recent tasks (last 5 updated)
+  const recentTasks = allTasks.slice(0, 5).map(task => ({
+    id: task.TaskID,
+    title: task.Title,
+    project: "Project", // For now, using placeholder
+    status: task.Status,
+    lastUpdated: formatLastUpdated(task.CreatedDate)
+  }))
+
+  function formatLastUpdated(dateString: string) {
+    const now = new Date()
+    const date = new Date(dateString)
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+
+    if (diffInHours < 1) return "Just now"
+    if (diffInHours < 24) return `${diffInHours} hours ago`
+
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays === 1) return "1 day ago"
+    if (diffInDays < 7) return `${diffInDays} days ago`
+
+    return date.toLocaleDateString()
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header with Navigation and Theme Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold text-foreground text-balance">Hello, Alex Johnson! 👋</h1>
+            <p className="text-muted-foreground text-lg">Welcome back to your task management dashboard</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <CreateTaskDialog />
+            <Link href="/kanban">
+              <Button variant="outline" className="flex items-center gap-2">
+                <KanbanSquare className="h-4 w-4" />
+                Kanban Board
+              </Button>
+            </Link>
+            {userRole === 'maintainer' && (
+              <Link href="/admin">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Admin Settings
+                </Button>
+              </Link>
+            )}
+            <ThemeToggle />
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">My Open Tasks</CardTitle>
+              <ListTodo className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">{stats.openTasks}</div>
+              <p className="text-xs text-muted-foreground mt-1">Active tasks in progress</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Overdue Tasks</CardTitle>
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-destructive">{stats.overdueTasks}</div>
+              <p className="text-xs text-muted-foreground mt-1">Need immediate attention</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Tasks Due Today</CardTitle>
+              <Clock className="h-5 w-5 text-accent" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-accent">{stats.dueToday}</div>
+              <p className="text-xs text-muted-foreground mt-1">Due by end of day</p>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Completed Tasks</CardTitle>
+              <CheckCircle2 className="h-5 w-5 text-secondary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-secondary">{stats.completedTasks}</div>
+              <p className="text-xs text-muted-foreground mt-1">This month</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Tasks Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              <CardTitle className="text-xl font-semibold">My Recently Updated Tasks</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <ListTodo className="h-4 w-4" />
+                        Task Title
+                      </div>
+                    </th>
+                    <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="h-4 w-4" />
+                        Project
+                      </div>
+                    </th>
+                    <th className="text-left py-3 px-2 font-medium text-muted-foreground">Status</th>
+                    <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Last Updated
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentTasks.map((task) => (
+                    <tr key={task.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                      <td className="py-4 px-2">
+                        <Link href={`/${task.id}`} className="font-medium text-foreground text-pretty hover:text-primary transition-colors">
+                          {task.title}
+                        </Link>
+                      </td>
+                      <td className="py-4 px-2">
+                        <div className="text-muted-foreground">{task.project}</div>
+                      </td>
+                      <td className="py-4 px-2">{getStatusBadge(task.status)}</td>
+                      <td className="py-4 px-2">
+                        <div className="text-muted-foreground text-sm">{task.lastUpdated}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
-  );
+  )
 }
