@@ -89,3 +89,4 @@ Deploy to Vercel by connecting your GitHub repository. Make sure to add your env
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Supabase Documentation](https://supabase.com/docs)
 - [shadcn/ui Documentation](https://ui.shadcn.com)
+# maxtask-app
